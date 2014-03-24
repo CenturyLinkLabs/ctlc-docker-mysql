@@ -1,108 +1,45 @@
 ctlc-docker-mysql
-==================
+============
 
-Base docker image to run a MySQL database server
+MySQL on Docker.
 
+Includes a bunch of cool features such as:
 
-Usage
------
+ - Exporting volumes so your data persists.
+ - Not running as root.
+ - Printing log output.
+ - Setting a root password.
+ - Creating a user and database.
+ - Passing extra parameters to mysqld.
 
-To create the image `ctlc/mysql`, execute the following command on the ctlc-mysql folder:
+Here's how it works:
 
-	sudo docker build -t ctlc/mysql .
+    $ docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=xehVg1IpVhEmlwRMG ctlc/mysql
+    da809981545f
+    $ mysql -h 127.0.0.1 -u root -p
+    Enter password:
+    Welcome to the MySQL monitor.  Commands end with ; or \g.
+    Your MySQL connection id is 1
+    Server version: 5.5.34-0ubuntu0.12.04.1-log (Ubuntu)
 
-The first time that you run your container, a new user `admin` with all privileges 
-will be created in MySQL with a random password. To get the password, check the logs
-of the container by running:
+    Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
 
-	sudo docker logs $CONTAINER_ID
+    Oracle is a registered trademark of Oracle Corporation and/or its
+    affiliates. Other names may be trademarks of their respective
+    owners.
 
-You will see an output like the following:
+    Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
-	========================================================================
-	You can now connect to this MySQL Server using:
+    mysql>
 
-	    mysql -uadmin -p47nnf4FweaKu -h<host> -P<port>
+(Example assumes MySQL client is installed on Docker host.)
 
-	Please remember to change the above password as soon as possible!
-	MySQL user 'root' has no password but only allows local connections
-	========================================================================
+Environment variables
+---------------------
 
-In this case, `47nnf4FweaKu` is the password allocated to the `admin` user. To get
-the allocated port to MySQL, execute:
-
-	sudo docker port $CONTAINER_ID 3306
-
-It will print the allocated port (like 4751). You can then connect to MySQL:
-
-	 mysql -uadmin -p47nnf4FweaKu -h127.0.0.1 -P4751
-
-Remember that the `root` user has no password but it's only accesible from within the container.
-
-
-Mounting the database file volume
----------------------------------
-
-In order to persist the database data, you can mount a local folder from the host on the container to store the database files. To do so:
-
-	$ID=$(sudo docker run -d -v /path/in/host:/var/lib/mysql ctlc/mysql-php /bin/bash -c "/usr/bin/mysql_install_db")
-
-This will mount the local folder `/path/in/host` inside the docker in `/var/lib/mysql` (where MySQL will store the database files by default). `mysql_install_db` creates the initial database structure.
-
-Remember that this will mean that your host must have `/path/in/host` available when you run your docker image!
-
-
-Initializing the server
------------------------
-
-To set your initial root password, run:
-
-	ID=$(sudo docker run -d ctlc/mysql /bin/bash -c "/set_root_pw.sh <newpassword>")
-
-Where `<newpassword>` is the password to be set for the root account. It will store the new container ID (like `d35bf1374e88`) in $ID. To create an image from that, execute:
-
-	sudo docker commit $ID ctlc/my-mysql-server
-
-To import a SQL backup which is stored for example in the folder `/tmp/sqlbackup` in the host, run the following:
-
-	ID=$(sudo docker run -d -v /tmp/sqlbackup:/tmp ctlc/my-mysql-server /bin/bash -c "/import_sql.sh <rootpassword> /tmp/<dump.sql>")
-
-Where `<rootpassword>` is the root password set earlier and `<dump.sql>` is the name of the SQL file to be imported.
-
-You can now push your changes to the registry:
-
-	sudo docker push ctlc/my-mysql-server
-
-
-Migrating an existing MySQL Server
-----------------------------------
-
-In order to migrate your current MySQL server to a docker, perform the following commands from your current server:
-
-To dump your databases structure:
-
-	mysqldump -u<user> -p --opt -d -B <database(s)> > dbserver_schema.sql
-
-To dump your database data:
-
-	mysqldump -u<user> -p --quick --single-transaction -t -n -B <database(s) > dbserver_data.sql
-
-
-Running the MySQL server
-------------------------
-
-Run the `/run.sh` script to start MySQL (via supervisor):
-
-	ID=$(sudo docker run -d -p 3306 ctlc/my-mysql-server /run.sh)
-
-
-It will store the new container ID (like `d35bf1374e88`) in $ID. Get the allocated external port:
-
-	sudo docker port $ID 3306
-
-
-It will print the allocated port (like 4751). Test your deployment:
-
-	mysql -uroot -p -h127.0.0.1 -P4751
-
-Done!
+ - `MYSQL_ROOT_PASSWORD`:Â The password for the root user, set every time the server starts. Defaults to a blank password, which is handy for development, but you should set this to something in production.
+ - `MYSQL_DATABASE`: A database to automatically create if it doesn't exist. If not provided, does not create a database.
+ - `MYSQL_USER`: A user to create that has access to the database specified by `MYSQL_DATABASE`.
+ - `MYSQL_PASSWORD`: The password for `MYSQL_USER`. Defaults to a blank password.
+ - `MYSQLD_ARGS`: extra parameters to pass to the mysqld process
+ 

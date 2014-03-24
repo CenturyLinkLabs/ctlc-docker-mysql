@@ -1,27 +1,13 @@
-FROM ubuntu:quantal
+FROM stackbrew/ubuntu:12.04
 MAINTAINER Lucas Carlson <lucas@rufy.com>
 
-# Install packages
-RUN apt-get update
-RUN apt-get -y upgrade
-RUN ! DEBIAN_FRONTEND=noninteractive apt-get -qy install supervisor unzip mysql-server pwgen; ls
+RUN apt-get update -qq && apt-get install -y mysql-server-5.5
 
-ADD https://dl.bintray.com/mitchellh/serf/0.4.1_linux_amd64.zip serf.zip
-RUN unzip serf.zip
-RUN rm serf.zip
-RUN mv serf /usr/bin/
+ADD my.cnf /etc/mysql/conf.d/my.cnf
+RUN chmod 664 /etc/mysql/conf.d/my.cnf
+ADD run.sh /run.sh
+RUN chmod +x /run.sh
 
-# Add image configuration and scripts
-ADD /start.sh /start.sh
-ADD /start-serf.sh /start-serf.sh
-ADD /serf-join.sh /serf-join.sh
-ADD /run.sh /run.sh
-ADD /supervisord-mysqld.conf /etc/supervisor/conf.d/supervisord-mysqld.conf
-ADD /supervisord-serf.conf /etc/supervisor/conf.d/supervisord-serf.conf
-ADD /my.cnf /etc/mysql/conf.d/my.cnf
-ADD /create_mysql_admin_user.sh /create_mysql_admin_user.sh
-ADD /import_sql.sh /import_sql.sh
-RUN chmod 755 /*.sh
-
+VOLUME ["/var/lib/mysql"]
 EXPOSE 3306
 CMD ["/run.sh"]
